@@ -34,6 +34,8 @@ func yourApp(s server) {
 			s.winlog.Info(1, "Error on UDP read: "+err.Error()+remoteaddr.Network())
 		}
 		s.winlog.Info(1, string(packet))
+
+		go parseAndPublish(s, packet) //goroutine-ing the publish may improve performance
 	}
 
 	// Notice that if this exits, the service continues to run - you can launch web servers, etc.
