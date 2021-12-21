@@ -21,8 +21,7 @@ func setup(wl debug.Log, svcName, sha1ver string) (server, error) {
 
 	s.winlog = wl
 
-	// Note: any logging here goes to Windows App Log
-	// I suggest you setup local logging
+	// Note: any logging here goes to Windows App Log - I suggest you setup local logging
 	s.winlog.Info(1, fmt.Sprintf("%s: setup (%s)", svcName, sha1ver))
 
 	// read configuration

@@ -35,11 +35,8 @@ func usage(errmsg string) {
 }
 
 func main() {
-
-	// You can define svcName here instead and it works fine
+	// You can define svcName here
 	const svcName = "Xpert Point Six Service"
-
-	// This is the name that will appear in the Services control panel
 
 	isIntSess, err := svc.IsAnInteractiveSession()
 	if err != nil {
