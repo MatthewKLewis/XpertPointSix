@@ -1,6 +1,12 @@
 package main
 
-import "encoding/hex"
+import (
+	"encoding/binary"
+	"encoding/json"
+	"strconv"
+)
+
+//"encoding/binary"
 
 // C3 3C - 2 byte identifier
 
@@ -34,20 +40,48 @@ import "encoding/hex"
 // // //  * Most significant byte is first.
 // // //  UDP Sensor Packets that include only Data1 are 63 bytes. UDP Sensor Packets that include Data1 and Data2 are 75 bytes. Older sensors contained Data1 but not Data2. Newer sensors include Data1 and Data2.
 
+//commandBuffer[52] = 48;
+//commandBuffer[53] = 56;
+//commandBuffer[54] = 70;
+//commandBuffer[55] = 53;
+
 type PointSixMessage struct {
-	MAC string
+	CMD           uint16
+	MAC           string
+	Loc1          uint8
+	Loc2          uint8
+	SensorPacket  []byte
+	Org           byte
+	Transmissions []byte
+	Period        uint16
+	Alarm         byte
+
+	Temperature float32
 }
 
 // The wrapper of your app
-func parseAndPublish(s server, packet []byte) {
+func parse(packet []byte) []byte {
 
 	var x PointSixMessage
+	x.CMD = binary.BigEndian.Uint16(packet[2:4])
+	x.MAC = string(packet[6:23])
+	x.Loc1 = packet[32]
+	x.Loc2 = packet[33]
+	x.SensorPacket = packet[34:63]
 
-	if len(packet) < 16 {
-		s.winlog.Info(1, "Packet insufficient length")
+	var tempHex = string(packet[52:56])
+	var tempInt, _ = strconv.ParseInt(tempHex, 16, 32)
+	x.Temperature = (float32(tempInt) * 0.0977) - 200
+
+	x.Org = packet[63]
+	x.Transmissions = packet[64:67]
+	x.Period = binary.BigEndian.Uint16(packet[70:72])
+	x.Alarm = packet[72]
+
+	retString, err := json.Marshal(x)
+	if err != nil {
+		panic("dang")
 	}
 
-	x.MAC = hex.Dump(packet[6:12])
-	s.winlog.Info(1, x.MAC)
-
+	return retString
 }

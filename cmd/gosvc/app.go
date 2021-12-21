@@ -1,20 +1,32 @@
 package main
 
 import (
+	"fmt"
 	"net"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 const (
 	UDP_LISTEN_CONNECTION = "192.168.3.157" // Matthew's Laptop
+	broker                = "localhost"
+	port                  = 1883
 )
 
-// The wrapper of your app
+// App should be able to publish either to MQTT or ???
+
+// Config based choosing between MQTT and ???
+// XpertMessage formatting in publishing
+// ACKs?
+// Maintenence protocol?
+// Configuration protocol?
+
 func yourApp(s server) {
 	s.winlog.Info(1, "In Xpert PointSix Parse")
 
 	packet := make([]byte, 65536)
 	addr := net.UDPAddr{
-		Port: 8552,
+		Port: 8557,
 		IP:   net.ParseIP(UDP_LISTEN_CONNECTION), //Ethernet on Go Dev Server Side?
 	}
 	s.winlog.Info(1, "Address set to: "+addr.IP.String())
@@ -25,18 +37,19 @@ func yourApp(s server) {
 		panic(err)
 	}
 
-	s.winlog.Info(1, "Server string: "+server.LocalAddr().Network())
+	opts := mqtt.NewClientOptions()
+	opts.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
+	client := mqtt.NewClient(opts)
+
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		s.winlog.Info(1, "Error connecting to mqtt")
+	}
 
 	for {
-		//Read packets on the UDP connection
-		_, remoteaddr, err := server.ReadFromUDP(packet) //is this 'blocking' waiting for a UDP message to come in?
+		_, remoteaddr, err := server.ReadFromUDP(packet) //is this blocking waiting for a UDP message to come in?
 		if err != nil {
 			s.winlog.Info(1, "Error on UDP read: "+err.Error()+remoteaddr.Network())
 		}
-		s.winlog.Info(1, string(packet))
-
-		go parseAndPublish(s, packet) //goroutine-ing the publish may improve performance
+		go client.Publish("topic/test", 0, false, parse(packet))
 	}
-
-	// Notice that if this exits, the service continues to run - you can launch web servers, etc.
 }
