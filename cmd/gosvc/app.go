@@ -13,8 +13,7 @@ const (
 	port                  = 1883
 )
 
-// App should be able to publish either to MQTT or ???
-
+// TODO
 // Config based choosing between MQTT and ???
 // XpertMessage formatting in publishing
 // ACKs?

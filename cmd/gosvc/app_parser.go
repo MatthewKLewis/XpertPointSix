@@ -40,22 +40,17 @@ import (
 // // //  * Most significant byte is first.
 // // //  UDP Sensor Packets that include only Data1 are 63 bytes. UDP Sensor Packets that include Data1 and Data2 are 75 bytes. Older sensors contained Data1 but not Data2. Newer sensors include Data1 and Data2.
 
-//commandBuffer[52] = 48;
-//commandBuffer[53] = 56;
-//commandBuffer[54] = 70;
-//commandBuffer[55] = 53;
-
 type PointSixMessage struct {
 	CMD           uint16
 	MAC           string
 	Loc1          uint8
 	Loc2          uint8
-	SensorPacket  []byte
 	Org           byte
 	Transmissions []byte
 	Period        uint16
 	Alarm         byte
 
+	//Sensor Packet Stuff
 	Temperature float32
 }
 
@@ -67,7 +62,6 @@ func parse(packet []byte) []byte {
 	x.MAC = string(packet[6:23])
 	x.Loc1 = packet[32]
 	x.Loc2 = packet[33]
-	x.SensorPacket = packet[34:63]
 
 	var tempHex = string(packet[52:56])
 	var tempInt, _ = strconv.ParseInt(tempHex, 16, 32)
