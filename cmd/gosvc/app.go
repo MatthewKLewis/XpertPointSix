@@ -1,20 +1,15 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
-	"os"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-type Configuration struct {
-	message string
-}
-
 const (
-	UDP_LISTEN_CONNECTION = "192.168.3.157" // Matthew's Laptop
+	//UDP_LISTEN_CONNECTION = "192.168.3.157" // Matthew's Laptop
+	UDP_LISTEN_CONNECTION = "192.168.1.116" // Matthew's Laptop at home
 	broker                = "localhost"
 	port                  = 1883
 )
@@ -28,10 +23,6 @@ const (
 
 func yourApp(s server) {
 	s.winlog.Info(1, "In Xpert PointSix Parse")
-
-	//load configs
-	var configuration Configuration = loadConfigs()
-	s.winlog.Info(1, configuration.message)
 
 	packet := make([]byte, 65536)
 	addr := net.UDPAddr{
@@ -61,16 +52,4 @@ func yourApp(s server) {
 		}
 		go client.Publish("topic/test", 0, false, parse(packet))
 	}
-}
-
-func loadConfigs() Configuration {
-	file, _ := os.Open("conf.json")
-	defer file.Close()
-	decoder := json.NewDecoder(file)
-	configuration := Configuration{}
-	err := decoder.Decode(&configuration)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	return configuration
 }
