@@ -8,7 +8,6 @@ import (
 )
 
 // TODO
-// Config based choosing between MQTT and ???
 // XpertMessage formatting in publishing
 // ACKs?
 // Maintenence protocol?

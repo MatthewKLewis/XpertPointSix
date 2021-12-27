@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"strconv"
+	"strings"
+	"time"
 )
 
 //"encoding/binary"
@@ -54,17 +56,31 @@ type PointSixMessage struct {
 	Temperature float32
 }
 
+type DeviceReport struct {
+	DeviceUniqueID string
+	DeviceModel    string
+}
+
+type XpertMessage struct {
+	DeviceReports []*DeviceReport
+
+	ReceivedTimestamp string
+	SchemaName        string
+	SchemaVersion     string
+}
+
 // The wrapper of your app
 func parse(packet []byte) []byte {
 
 	var x PointSixMessage
+	var r XpertMessage
+
 	x.CMD = binary.BigEndian.Uint16(packet[2:4])
 	x.MAC = string(packet[6:23])
 	x.Loc1 = packet[32]
 	x.Loc2 = packet[33]
 
-	var tempHex = string(packet[52:56])
-	var tempInt, _ = strconv.ParseInt(tempHex, 16, 32)
+	var tempInt, _ = strconv.ParseInt(string(packet[52:56]), 16, 32)
 	x.Temperature = (float32(tempInt) * 0.0977) - 200
 
 	x.Org = packet[63]
@@ -72,7 +88,16 @@ func parse(packet []byte) []byte {
 	x.Period = binary.BigEndian.Uint16(packet[70:72])
 	x.Alarm = packet[72]
 
-	retString, err := json.Marshal(x)
+	r.ReceivedTimestamp = time.Now().Format("2006-01-02T15:04:05.999999-07:00")
+	r.SchemaName = "XpertSchema.XpertMessage.XpertMessage"
+	r.SchemaVersion = "1"
+
+	var newDevRep DeviceReport
+	newDevRep.DeviceModel = "PointSix"
+	newDevRep.DeviceUniqueID = strings.ToUpper(x.MAC)
+	r.DeviceReports = append(r.DeviceReports, &newDevRep)
+
+	retString, err := json.Marshal(r)
 	if err != nil {
 		panic("dang")
 	}
