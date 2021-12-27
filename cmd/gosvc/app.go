@@ -7,13 +7,6 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-const (
-	//UDP_LISTEN_CONNECTION = "192.168.3.157" // Matthew's Laptop
-	UDP_LISTEN_CONNECTION = "192.168.1.116" // Matthew's Laptop at home
-	broker                = "localhost"
-	port                  = 1883
-)
-
 // TODO
 // Config based choosing between MQTT and ???
 // XpertMessage formatting in publishing
@@ -21,13 +14,14 @@ const (
 // Maintenence protocol?
 // Configuration protocol?
 
-func yourApp(s server) {
-	s.winlog.Info(1, "In Xpert PointSix Parse")
+func yourApp(s server, c Configuration) {
+	s.winlog.Info(1, "In Xpert PointSix Parser")
+	s.winlog.Info(1, c.Message)
 
 	packet := make([]byte, 65536)
 	addr := net.UDPAddr{
 		Port: 8557,
-		IP:   net.ParseIP(UDP_LISTEN_CONNECTION), //Ethernet on Go Dev Server Side?
+		IP:   net.ParseIP(c.MqttServer), //Ethernet on Go Dev Server Side?
 	}
 	s.winlog.Info(1, "Address set to: "+addr.IP.String())
 
@@ -37,19 +31,33 @@ func yourApp(s server) {
 		panic(err)
 	}
 
-	opts := mqtt.NewClientOptions()
-	opts.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
-	client := mqtt.NewClient(opts)
+	if c.UseMqtt && c.UseKafka {
+		s.winlog.Info(1, "Error: Both MQTT and Kafka Selected")
+	} else if c.UseMqtt {
+		//#region [ rgba(255,100,100,0.1) ] MQTT
+		s.winlog.Info(1, "Publishing to MQTT")
 
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		s.winlog.Info(1, "Error connecting to mqtt")
-	}
+		opts := mqtt.NewClientOptions()
+		opts.AddBroker(fmt.Sprintf("tcp://%s:%d", c.Broker, c.Port))
+		client := mqtt.NewClient(opts)
 
-	for {
-		_, remoteaddr, err := server.ReadFromUDP(packet) //is this blocking waiting for a UDP message to come in?
-		if err != nil {
-			s.winlog.Info(1, "Error on UDP read: "+err.Error()+remoteaddr.Network())
+		if token := client.Connect(); token.Wait() && token.Error() != nil {
+			s.winlog.Info(1, "Error connecting to mqtt")
 		}
-		go client.Publish("topic/test", 0, false, parse(packet))
+
+		for {
+			_, remoteaddr, err := server.ReadFromUDP(packet) //is this blocking waiting for a UDP message to come in?
+			if err != nil {
+				s.winlog.Info(1, "Error on UDP read: "+err.Error()+remoteaddr.Network())
+			}
+			go client.Publish("topic/test", 0, false, parse(packet))
+		}
+		//#endregion
+	} else if c.UseKafka {
+		//#region [ rgba(100,100,255,0.1) ] KAFKA
+		s.winlog.Info(1, "Publishing to Kafka")
+
+		//#endregion
 	}
+
 }
