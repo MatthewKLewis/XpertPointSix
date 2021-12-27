@@ -50,7 +50,7 @@ type PointSixMessage struct {
 	Org           byte
 	Transmissions []byte
 	Period        uint16
-	Alarm         byte
+	Alarm         string
 
 	//Sensor Packet Stuff
 	Temperature float32
@@ -71,7 +71,7 @@ type XpertMessage struct {
 
 // The wrapper of your app
 func parse(packet []byte) []byte {
-
+	//struct in the pointsix format
 	var x PointSixMessage
 	var r XpertMessage
 
@@ -86,8 +86,30 @@ func parse(packet []byte) []byte {
 	x.Org = packet[63]
 	x.Transmissions = packet[64:67]
 	x.Period = binary.BigEndian.Uint16(packet[70:72])
-	x.Alarm = packet[72]
 
+	var alarmByte = packet[72]
+	switch alarmByte {
+	case 0:
+		x.Alarm = "Low Alarm"
+	case 1:
+		x.Alarm = "High Alarm"
+	case 2:
+		x.Alarm = "Low Alarm"
+	case 3:
+		x.Alarm = "High Alarm"
+	case 4:
+		x.Alarm = "Low Alarm - Reset"
+	case 5:
+		x.Alarm = "High Alarm - Reset"
+	case 6:
+		x.Alarm = "Low Alarm - Reset"
+	case 7:
+		x.Alarm = "High Alarm - Reset"
+	default:
+		x.Alarm = "Error"
+	}
+
+	//re-structing the info
 	r.ReceivedTimestamp = time.Now().Format("2006-01-02T15:04:05.999999-07:00")
 	r.SchemaName = "XpertSchema.XpertMessage.XpertMessage"
 	r.SchemaVersion = "1"
