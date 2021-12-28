@@ -59,6 +59,8 @@ type PointSixMessage struct {
 type DeviceReport struct {
 	DeviceUniqueID string
 	DeviceModel    string
+	Alarm          string
+	Temperature    float32
 }
 
 type XpertMessage struct {
@@ -109,7 +111,7 @@ func parse(packet []byte) []byte {
 		x.Alarm = "Error"
 	}
 
-	//re-structing the info
+	//re-structing the info to XpertMessage
 	r.ReceivedTimestamp = time.Now().Format("2006-01-02T15:04:05.999999-07:00")
 	r.SchemaName = "XpertSchema.XpertMessage.XpertMessage"
 	r.SchemaVersion = "1"
@@ -117,6 +119,8 @@ func parse(packet []byte) []byte {
 	var newDevRep DeviceReport
 	newDevRep.DeviceModel = "PointSix"
 	newDevRep.DeviceUniqueID = strings.ToUpper(x.MAC)
+	newDevRep.Alarm = x.Alarm
+	newDevRep.Temperature = x.Temperature
 	r.DeviceReports = append(r.DeviceReports, &newDevRep)
 
 	retString, err := json.Marshal(r)

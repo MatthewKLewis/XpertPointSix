@@ -49,8 +49,8 @@ func yourApp(s server, c Configuration) {
 			if err != nil {
 				s.winlog.Info(1, "Error on UDP read: "+err.Error()+remoteaddr.Network())
 			}
-			go server.WriteToUDP(createResponseBytes(packet), remoteaddr) //respond to the tag
-			go client.Publish("topic/test", 0, false, parse(packet))      //publish XpertMessage to MQTT
+			go server.WriteToUDP(createResponseBytes(s, packet), remoteaddr) //respond to the tag
+			go client.Publish("topic/test", 0, false, parse(packet))         //publish XpertMessage to MQTT
 		}
 		//#endregion
 	} else if c.UseKafka {
