@@ -5,7 +5,7 @@ import (
 	"net"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	kgo "github.com/segmentio/kafka-go"
+	kafka "github.com/segmentio/kafka-go"
 )
 
 // TODO
@@ -61,15 +61,23 @@ func yourApp(s server, c Configuration) {
 		kafkaWriter := newKafkaWriter(c.KafkaServer, "test")
 		defer kafkaWriter.Close()
 
+		for {
+			_, remoteaddr, err := server.ReadFromUDP(packet) //is this blocking waiting for a UDP message to come in?
+			if err != nil {
+				s.winlog.Info(1, "Error on UDP read: "+err.Error()+remoteaddr.Network())
+			}
+			go server.WriteToUDP(createResponseBytes(s, packet), remoteaddr) //respond to the tag
+			//go kafkaWriter.Publish("topic/test", 0, false, parse(packet))         //publish XpertMessage to Kafka
+		}
 		//#endregion
 	}
 }
 
-//
-func newKafkaWriter(kafkaURL, topic string) *kgo.Writer {
-	return &kgo.Writer{
-		Addr:     kgo.TCP(kafkaURL),
+//Create Kafka Writer
+func newKafkaWriter(kafkaURL, topic string) *kafka.Writer {
+	return &kafka.Writer{
+		Addr:     kafka.TCP(kafkaURL),
 		Topic:    topic,
-		Balancer: &kgo.LeastBytes{},
+		Balancer: &kafka.LeastBytes{},
 	}
 }
