@@ -9,9 +9,7 @@ import (
 )
 
 //"encoding/binary"
-
 // C3 3C - 2 byte identifier
-
 // Cmd – (1 byte) Command: 2 – UDP Sensor Data; 5 – UDP Simulated Sensor Data (Wifi Sensor Utility).
 
 // // DATA 1:
@@ -43,14 +41,15 @@ import (
 // // //  UDP Sensor Packets that include only Data1 are 63 bytes. UDP Sensor Packets that include Data1 and Data2 are 75 bytes. Older sensors contained Data1 but not Data2. Newer sensors include Data1 and Data2.
 
 type PointSixMessage struct {
-	CMD           uint16
-	MAC           string
-	Loc1          uint8
-	Loc2          uint8
-	Org           byte
-	Transmissions []byte
-	Period        uint16
-	Alarm         string
+	CMD              uint16
+	MAC              string
+	Loc1             uint8
+	Loc2             uint8
+	Org              byte
+	Transmissions    int
+	MaxTransmissions int
+	Period           uint16
+	Alarm            string
 
 	//Sensor Packet Stuff
 	Temperature float32
@@ -61,6 +60,7 @@ type DeviceReport struct {
 	DeviceModel    string
 	Alarm          string
 	Temperature    float32
+	BatteryLife    int
 }
 
 type XpertMessage struct {
@@ -86,7 +86,8 @@ func parse(packet []byte) []byte {
 	x.Temperature = (float32(tempInt) * 0.0977) - 200
 
 	x.Org = packet[63]
-	x.Transmissions = packet[64:67]
+	x.Transmissions = int(uint(packet[66]) | uint(packet[65])<<8 | uint(packet[64])<<16)
+	x.MaxTransmissions = int(uint(packet[69]) | uint(packet[68])<<8 | uint(packet[67])<<16) //Three byte ints
 	x.Period = binary.BigEndian.Uint16(packet[70:72])
 
 	var alarmByte = packet[72]
@@ -121,6 +122,7 @@ func parse(packet []byte) []byte {
 	newDevRep.DeviceUniqueID = strings.ToUpper(x.MAC)
 	newDevRep.Alarm = x.Alarm
 	newDevRep.Temperature = x.Temperature
+	newDevRep.BatteryLife = 100 - (x.Transmissions / x.MaxTransmissions)
 	r.DeviceReports = append(r.DeviceReports, &newDevRep)
 
 	retString, err := json.Marshal(r)
