@@ -43,6 +43,7 @@ import (
 type PointSixMessage struct {
 	CMD              uint16
 	MAC              string
+	WifiMAC          string
 	Loc1             uint8
 	Loc2             uint8
 	Org              byte
@@ -82,8 +83,16 @@ func parse(packet []byte) []byte {
 	x.Loc1 = packet[32]
 	x.Loc2 = packet[33]
 
+	//WHAT ELSE IS IN THE SENSOR PACKET 34-52, 56-63???
+	//36-43 is another MAC?
+	//44-45 is always 0 and 1?
+	//46-47 is always 3C (pointsix identifier)?
+	//48-51 is always 0000
+
 	var tempInt, _ = strconv.ParseInt(string(packet[52:56]), 16, 32)
 	x.Temperature = (float32(tempInt) * 0.0977) - 200
+
+	//the rest, dunno.
 
 	x.Org = packet[63]
 	x.Transmissions = int(uint(packet[66]) | uint(packet[65])<<8 | uint(packet[64])<<16)
