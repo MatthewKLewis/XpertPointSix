@@ -5,6 +5,7 @@ import (
 	"net"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	kgo "github.com/segmentio/kafka-go"
 )
 
 // TODO
@@ -57,6 +58,18 @@ func yourApp(s server, c Configuration) {
 		//#region [ rgba(100,100,255,0.1) ] KAFKA
 		s.winlog.Info(1, "Publishing to Kafka")
 
+		kafkaWriter := newKafkaWriter(c.KafkaServer, "test")
+		defer kafkaWriter.Close()
+
 		//#endregion
+	}
+}
+
+//
+func newKafkaWriter(kafkaURL, topic string) *kgo.Writer {
+	return &kgo.Writer{
+		Addr:     kgo.TCP(kafkaURL),
+		Topic:    topic,
+		Balancer: &kgo.LeastBytes{},
 	}
 }
