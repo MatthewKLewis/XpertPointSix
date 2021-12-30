@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -9,8 +10,6 @@ import (
 )
 
 // TODO
-// XpertMessage formatting in publishing
-// ACKs?
 // Maintenence protocol?
 // Configuration protocol?
 
@@ -68,6 +67,9 @@ func yourApp(s server, c Configuration) {
 			}
 			go server.WriteToUDP(createResponseBytes(s, packet), remoteaddr) //respond to the tag
 			//go kafkaWriter.Publish("topic/test", 0, false, parse(packet))         //publish XpertMessage to Kafka
+			msg := kafka.Message{}
+			msg.Value = parse(packet)
+			go kafkaWriter.WriteMessages(context.Background(), msg)
 		}
 		//#endregion
 	}
